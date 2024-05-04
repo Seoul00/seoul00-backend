@@ -1,5 +1,6 @@
 package com.backend.seoul00.domain.collection.service;
 
+import com.backend.seoul00.domain.collection.dto.SearchResponseDto;
 import com.backend.seoul00.domain.collection.entity.CollectionJpaEntity;
 import com.backend.seoul00.domain.collection.repository.CollectionRepository;
 import com.backend.seoul00.domain.collection.repository.CustomRepository;
@@ -14,6 +15,9 @@ import org.springframework.web.util.UriBuilder;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CollectionService {
@@ -29,10 +33,6 @@ public class CollectionService {
         this.objectMapper = objectMapper;
         this.collectionRepository = collectionRepository;
     }
-
-    // TODO : 사용자 위치 기반 데이터 API
-
-    // TODO : 검색 데이터 API
 
     public void updateSeoulInfo() throws JsonProcessingException {
         for (CollectionJpaEntity entity : collectionRepository.findAll()) {
@@ -95,4 +95,49 @@ public class CollectionService {
         UriBuilder builder = uriBuilder.queryParam("query", query);
         return builder.build();
     }
+
+    // 사용자 위치 기반 데이터 API
+    public List<SearchResponseDto> getByDist(double latitude, double longitude, double radius) {
+        List<CollectionJpaEntity> entities;
+        try {
+            entities = collectionRepository.findAll();
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            return new ArrayList<>();
+        }
+
+        return entities.stream()
+                .filter(entity -> calculateDistance(latitude, longitude, entity.getLatitude(), entity.getLongitude()) < radius)
+                .map(entity -> new SearchResponseDto(
+                        entity.getLatitude(), entity.getLongitude(), entity.getAddress(), entity.getType()))
+                .collect(Collectors.toList());
+    }
+
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        lat1 = Math.toRadians(lat1);
+        lon1 = Math.toRadians(lon1);
+        lat2 = Math.toRadians(lat2);
+        lon2 = Math.toRadians(lon2);
+
+        double earthRadius = 6371;
+        return earthRadius * Math.acos(Math.sin(lat1) * Math.sin(lat2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2));
+    }
+
+    // 검색 데이터 API
+    public List<SearchResponseDto> getByAddress(String address) {
+        List<CollectionJpaEntity> entities;
+        try {
+            entities = collectionRepository.findByAddressContaining(address);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            return new ArrayList<>();
+        }
+
+        return entities.stream()
+                .map(entity -> new SearchResponseDto(
+                        entity.getLatitude(), entity.getLongitude(), entity.getAddress(), entity.getType()))
+                .collect(Collectors.toList());
+    }
+
 }
