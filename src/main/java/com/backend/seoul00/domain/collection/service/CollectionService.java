@@ -1,23 +1,33 @@
 package com.backend.seoul00.domain.collection.service;
 
 import com.backend.seoul00.domain.collection.dto.SearchResponseDto;
+import com.backend.seoul00.domain.collection.dto.SearchRequestDto;
+import com.backend.seoul00.domain.collection.dto.SearchTypeRequestDto;
+import com.backend.seoul00.domain.collection.dto.SliceResponse;
 import com.backend.seoul00.domain.collection.entity.CollectionJpaEntity;
+import com.backend.seoul00.domain.collection.entity.Type;
 import com.backend.seoul00.domain.collection.repository.CollectionRepository;
 import com.backend.seoul00.domain.collection.repository.CustomRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriBuilder;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 public class CollectionService {
@@ -34,10 +44,24 @@ public class CollectionService {
         this.collectionRepository = collectionRepository;
     }
 
+    @Transactional
+    public SliceResponse<CollectionJpaEntity> findByType(
+            SearchRequestDto request,
+            SearchTypeRequestDto searchType) {
+        if (searchType.getTypes().isEmpty()) {
+            List<Type> list = new ArrayList<>(
+                    Arrays.asList(Type.values())
+            );
+            searchType.setTypes(list);
+        }
+
+        final Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+        Slice<CollectionJpaEntity> result = customRepository.searchPosByQuery(request.getQuery(), searchType.getTypes(), pageable);
+        return new SliceResponse<>(result);
+    }
+
     public void updateSeoulInfo() throws JsonProcessingException {
         for (CollectionJpaEntity entity : collectionRepository.findAll()) {
-            if (entity.getId() < 19529) continue;
-
             String address = entity.getAddress();
             String mapResult = restClient.get()
                     .uri(uriBuilder -> getUri(uriBuilder, address))
@@ -96,7 +120,6 @@ public class CollectionService {
         return builder.build();
     }
 
-    // 사용자 위치 기반 데이터 API
     public List<SearchResponseDto> getByDist(double latitude, double longitude, double radius) {
         List<CollectionJpaEntity> entities;
         try {
@@ -124,7 +147,6 @@ public class CollectionService {
                 + Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2));
     }
 
-    // 검색 데이터 API
     public List<SearchResponseDto> getByAddress(String address) {
         List<CollectionJpaEntity> entities;
         try {

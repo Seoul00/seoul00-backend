@@ -1,10 +1,11 @@
 package com.backend.seoul00.domain.collection.controller;
 
-import com.backend.seoul00.domain.collection.dto.ResponseCounter;
-import com.backend.seoul00.domain.collection.dto.SearchResponseDto;
+import com.backend.seoul00.domain.collection.dto.*;
+import com.backend.seoul00.domain.collection.entity.CollectionJpaEntity;
 import com.backend.seoul00.domain.collection.service.CollectionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,7 +32,7 @@ public class CollectionController {
     }
 
     //검색 데이터 API
-    @GetMapping("/search")
+    //@GetMapping("/search")
     public ResponseEntity<ResponseCounter<List<SearchResponseDto>>> searchByKeyword(
             @RequestParam String keyword
     ){
@@ -39,4 +40,12 @@ public class CollectionController {
                 .body(new ResponseCounter<>(collectionService.getByAddress(keyword)));
     }
 
+
+    @GetMapping("/search")
+    public SliceResponse<CollectionJpaEntity> getSlice(
+            SearchRequestDto request,
+            @RequestBody SearchTypeRequestDto searchType
+    ) {
+        return collectionService.findByType(request, searchType);
+    }
 }
