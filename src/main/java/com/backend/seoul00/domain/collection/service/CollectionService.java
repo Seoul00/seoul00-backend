@@ -130,6 +130,7 @@ public class CollectionService {
         }
 
         return entities.stream()
+                .filter(entity -> entity.getLongitude() != null && entity.getLatitude() != null)
                 .filter(entity -> calculateDistance(latitude, longitude, entity.getLatitude(), entity.getLongitude()) < radius)
                 .map(entity -> new SearchResponseDto(
                         entity.getLatitude(), entity.getLongitude(), entity.getAddress(), entity.getType()))
