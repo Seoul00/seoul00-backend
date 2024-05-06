@@ -43,9 +43,8 @@ public class CollectionController {
 
     @GetMapping("/search")
     public SliceResponse<CollectionJpaEntity> getSlice(
-            SearchRequestDto request,
-            @RequestBody SearchTypeRequestDto searchType
+            SearchRequestDto request
     ) {
-        return collectionService.findByType(request, searchType);
+        return collectionService.findByType(request);
     }
 }

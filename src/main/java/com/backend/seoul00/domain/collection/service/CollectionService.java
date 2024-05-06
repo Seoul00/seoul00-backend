@@ -46,17 +46,13 @@ public class CollectionService {
 
     @Transactional
     public SliceResponse<CollectionJpaEntity> findByType(
-            SearchRequestDto request,
-            SearchTypeRequestDto searchType) {
-        if (searchType.getTypes().isEmpty()) {
-            List<Type> list = new ArrayList<>(
-                    Arrays.asList(Type.values())
-            );
-            searchType.setTypes(list);
-        }
-
+            SearchRequestDto request) {
         final Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
-        Slice<CollectionJpaEntity> result = customRepository.searchPosByQuery(request.getQuery(), searchType.getTypes(), pageable);
+        Slice<CollectionJpaEntity> result = customRepository.searchPosByQuery(
+            request.getQuery(),
+            new SearchTypeRequestDto(request.getType()),
+            pageable);
+
         return new SliceResponse<>(result);
     }
 

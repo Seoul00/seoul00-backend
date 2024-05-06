@@ -6,6 +6,7 @@ import lombok.Data;
 public class SearchRequestDto {
 
     private String query;
+    private String type;
 
     private int page;
     private int size;
